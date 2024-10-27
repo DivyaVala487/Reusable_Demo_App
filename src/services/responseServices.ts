@@ -136,7 +136,8 @@ export const getResponseMessage = (message: string) => {
     CATEGORY_NOT_PRESENT: "Category Not Present",
     CATEGORY_DELETING_FAILED: "Category Deleting Failed",
     CATEGORY_DELETED_SUCCESSFULLY: "Category Deleted Successfully",
-    SUBCATEGORIES_UPDATED_SUCCESSFULLY: "Subcategories edited successfully"
+    SUBCATEGORIES_UPDATED_SUCCESSFULLY: "Subcategories edited successfully",
+    SUBCATEGORIES_PROCESSED_SUCCESSFULLY: "Subcategories Processed Successfully"
 
 
 

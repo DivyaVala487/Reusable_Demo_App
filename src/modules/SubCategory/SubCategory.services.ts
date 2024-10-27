@@ -399,12 +399,13 @@ export const editSubCategories = async (
 
 
 export const editingSubCategory = async (
-    subCategoryDetailsArray: { category_id: number, sub_category_name: any, icon: any, subcategory_id: number }[]
+    subCategoryDetailsArray: { category_id: number, sub_category_name: string, icon: any, subcategory_id?: number }[]
 ): Promise<ResponseDto> => {
     const transaction = await sequelize.transaction();
     let response: ResponseDto;
     try {
-        const createdSubCategories = [];
+        const createdOrUpdatedSubCategories = [];
+
         for (const subCategoryDetails of subCategoryDetailsArray) {
             const { category_id, sub_category_name, icon, subcategory_id } = subCategoryDetails;
 
@@ -421,22 +422,6 @@ export const editingSubCategory = async (
                 });
             }
 
-            const existingSubCategory = await SubcategoryModel.findOne({
-                where: {
-                    category_id,
-                    subcategory_id,
-                },
-                transaction,
-            });
-
-            if (!existingSubCategory) {
-                await transaction.rollback();
-                return setErrorResponse({
-                    statusCode: 400,
-                    message: getResponseMessage("SUBCATEGORY_NOT_FOUND"),
-                });
-            }
-
             let uploadedIconUrl = null;
             if (icon && icon.path) {
                 const uploadResponse = await cloudinary.uploader.upload(icon.path, {
@@ -446,32 +431,59 @@ export const editingSubCategory = async (
                 uploadedIconUrl = uploadResponse.secure_url;
             }
 
-            const [affectedCount] = await SubcategoryModel.update(
-                {
-                    sub_category_name,
-                    icon: uploadedIconUrl || "",
-                },
-                {
-                    where: {
-                        category_id,
-                        subcategory_id,
-                    },
+            if (subcategory_id) {
+                const existingSubCategory = await SubcategoryModel.findOne({
+                    where: { category_id, subcategory_id },
                     transaction,
+                });
+
+                if (!existingSubCategory) {
+                    await transaction.rollback();
+                    return setErrorResponse({
+                        statusCode: 400,
+                        message: getResponseMessage("SUBCATEGORY_NOT_FOUND"),
+                    });
                 }
-            );
 
+                await SubcategoryModel.update(
+                    {
+                        sub_category_name,
+                        icon: uploadedIconUrl || "",
+                    },
+                    {
+                        where: { category_id, subcategory_id },
+                        transaction,
+                    }
+                );
 
-            createdSubCategories.push({
-                sub_category_name,
-                sub_category_id: subcategory_id,
-                icon: uploadedIconUrl || "",
-            });
+                createdOrUpdatedSubCategories.push({
+                    sub_category_name,
+                    sub_category_id: subcategory_id,
+                    icon: uploadedIconUrl || "",
+                });
+            } else {
+                const newSubcategory = await SubcategoryModel.create(
+                    {
+                        category_id,
+                        sub_category_name,
+                        icon: uploadedIconUrl || "",
+                    },
+                    { transaction }
+                );
+
+                createdOrUpdatedSubCategories.push({
+                    sub_category_name,
+                    sub_category_id: newSubcategory.getDataValue("subcategory_id"),
+                    icon: uploadedIconUrl || "",
+                });
+            }
         }
+
         await transaction.commit();
         return setSuccessResponse({
             statusCode: 200,
-            message: getResponseMessage("SUBCATEGORIES_UPDATED_SUCCESSFULLY"),
-            data: createdSubCategories,
+            message: getResponseMessage("SUBCATEGORIES_PROCESSED_SUCCESSFULLY"),
+            data: createdOrUpdatedSubCategories,
         });
     } catch (error) {
         await transaction.rollback();
@@ -484,4 +496,7 @@ export const editingSubCategory = async (
         return result;
     }
 };
+
+
+
 

@@ -126,7 +126,8 @@ export const getAllCities = async (): Promise<ResponseDto> => {
                         state_short_name: state.short_name,
                         state_gst: state.gst,
                         city_name: city.city_name,
-                        city_id: city.city_id
+                        city_id: city.city_id,
+                        state_id: state.state_id
                     });
                 });
             });

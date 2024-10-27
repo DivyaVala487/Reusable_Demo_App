@@ -230,11 +230,9 @@ export const editMultipleSubCategory = async (req: Request, res: Response): Prom
 export const editingSubCategory = async (req: Request, res: Response): Promise<any> => {
     try {
         let response: ResponseDto;
-
-        const subcategories: { sub_category_name: string; subcategory_id: number }[] = Array.isArray(req.body.subcategories)
+        const subcategories: { sub_category_name: string; subcategory_id?: number }[] = Array.isArray(req.body.subcategories)
             ? req.body.subcategories
             : [req.body.subcategories];
-
 
         const files: Express.Multer.File[] = Array.isArray(req.files)
             ? (req.files as Express.Multer.File[])
@@ -242,21 +240,18 @@ export const editingSubCategory = async (req: Request, res: Response): Promise<a
 
         const categoryDetails: any = req.body;
 
-        console.log(categoryDetails, "categoryDetails");
-
 
         const schema = Joi.object({
             category_id: Joi.number().required().label("Category ID"),
             subcategories: Joi.array().items(
                 Joi.object({
                     sub_category_name: Joi.string().required().label("Subcategory Name"),
-                    subcategory_id: Joi.number().required().label("Subcategory ID")
+                    subcategory_id: Joi.number().optional().label("Subcategory ID")
                 })
             ).required().label("Subcategories")
         });
 
         categoryDetails.subcategories = subcategories;
-
 
         const validateResult: ResponseDto = await schemaValidation(categoryDetails, schema);
         if (!validateResult.status) {
@@ -266,7 +261,10 @@ export const editingSubCategory = async (req: Request, res: Response): Promise<a
 
 
         const normalizedFiles = Array.isArray(files) ? files : (files ? [files] : []);
-        if (normalizedFiles.length !== subcategories.length) {
+
+        const requiresFiles = subcategories.every((subCategory) => subCategory.subcategory_id);
+
+        if (requiresFiles && normalizedFiles.length !== subcategories.length) {
             return res.json(setErrorResponse({
                 statusCode: 400,
                 message: getResponseMessage("FILES_MISMATCH"),
@@ -283,7 +281,6 @@ export const editingSubCategory = async (req: Request, res: Response): Promise<a
 
         console.log(subCategoryDetailsArray, "subCategoryDetailsArray");
 
-
         const serviceResponse = await SubCatService.editingSubCategory(subCategoryDetailsArray);
         return res.json(sendResponse(serviceResponse));
 
@@ -297,3 +294,4 @@ export const editingSubCategory = async (req: Request, res: Response): Promise<a
         return res.json(sendResponse(result));
     }
 };
+
