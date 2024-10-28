@@ -191,7 +191,7 @@ export const editCountry = async (countryDetails: ICountryCreation, file: Expres
         }
 
 
-        let flagUrl = "";
+        let flagUrl = existingCountry.dataValues.flag;
         if (file) {
 
             const uploadResponse = await cloudinary.uploader.upload(file.path, {

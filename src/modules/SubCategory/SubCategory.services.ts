@@ -445,21 +445,28 @@ export const editingSubCategory = async (
                     });
                 }
 
+
+                const updateData: any = {
+                    sub_category_name,
+                };
+
+
+                if (uploadedIconUrl) {
+                    updateData.icon = uploadedIconUrl;
+                }
+
                 await SubcategoryModel.update(
-                    {
-                        sub_category_name,
-                        icon: uploadedIconUrl || "",
-                    },
+                    updateData,
                     {
                         where: { category_id, subcategory_id },
                         transaction,
                     }
                 );
-
+                const existingIcon = existingSubCategory.get("icon") as string;
                 createdOrUpdatedSubCategories.push({
                     sub_category_name,
                     sub_category_id: subcategory_id,
-                    icon: uploadedIconUrl || "",
+                    icon: uploadedIconUrl || existingIcon,
                 });
             } else {
                 const newSubcategory = await SubcategoryModel.create(
@@ -496,6 +503,7 @@ export const editingSubCategory = async (
         return result;
     }
 };
+
 
 
 
